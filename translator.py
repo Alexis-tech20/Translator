@@ -1,38 +1,64 @@
-import json 
-from ibm_watson import LanguageTranslatorV3
-from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
+import tkinter as tk
+from tkinter import *
+from google.cloud import translate_v2 as translate
 
-api_key = "BYP_OekFgmJ3pzm0UediVxLlHcPYRt_jau_dQ4v5U0ic"
-api_url = "https://api.au-syd.language-translator.watson.cloud.ibm.com/instances/34104abe-15d8-44ea-ae5e-12e4675ee0f2"
+# Initialize the Google Cloud Translation client
+client = translate.Client.from_service_account_json('json file Path')
 
-authenticator = IAMAuthenticator(api_key)
-translator = LanguageTranslatorV3(
-    version='2018-05-01',
-    authenticator=authenticator
-)
-translator.set_service_url(api_url)
+# Function to perform translation
+def translate_text():
+    text_to_translate = entry_text.get("1.0", END)
+    selected_language = target_language_var.get()
 
-def translate_text(text, source_language, target_language):
-    try:
-        response = translator.translate(
-            text=text,
-            source=source_language,
-            target=target_language
-        ).get_result()
-        translated_text = response["translations"][0]["translation"]
-        return translated_text
-    except Exception as e:
-        print("Error:", str(e))
-        return None
+    # Translate the text
+    result = client.translate(text_to_translate, target_language = selected_language)
 
-def main():
-    source_language = input("Enter the source language code (e.g., en for English): ")
-    target_language = input("Enter the target language code (e.g., es for Spanish): ")
-    text_to_translate = input("Enter the text to translate: ")
+    # Display the translated text
+    entry_translation.delete("1.0", END)
+    entry_translation.insert("1.0", result['translatedText'])
 
-    translated_text = translate_text(text_to_translate, source_language, target_language)
-    if translated_text:
-        print("Translated text:", translated_text)
+# Create the main application window
+window = Tk()
 
-if __name__ == "__main__":
-    main()
+# Create a title
+window.title("Translator")
+
+## Create and configure GUI elements
+# Center 
+app_width = 850
+app_height = 300
+
+screen_width = window.winfo_screenwidth()
+screen_height = window.winfo_screenheight()
+
+x = (screen_width / 2) - (app_width / 2)
+y = (screen_height / 2) - (app_height / 2)
+
+window.geometry(f'{app_width}x{app_height}+{int(x)}+{int(y)}')
+
+# Left: "Type in English" Label and Text Entry
+lbl1 = Label(window, text='Type in English:', font='Helvetica 16 bold')
+lbl1.place(x=50, y=50)
+entry_text = Text(window, width=30, height=5)  # Adjust height as needed
+entry_text.place(x=50, y=80)
+
+
+# Middle: Language Selection and Translate Button
+lbl2 = Label(window, text='Select Target Language:', font='Helvetica 12 bold')
+lbl2.place(x=325, y=50)
+
+target_language_var = StringVar(window) # helps to store target language
+target_language_listbox = OptionMenu(window, target_language_var, 'zh-HK', 'fr', 'es', 'de', 'it', 'ko', 'pt')
+target_language_listbox.place(x=395, y=80)
+
+btn = Button(window, text='Translate', command = translate_text, font='Helvetica 10 bold')
+btn.place(x=382, y=120)
+
+# Right: "Translation" Label and Text Entry
+lbl3 = Label(window, text='Translation:', font='Helvetica 16 bold')
+lbl3.place(x=550, y=50)
+entry_translation = Text(window, width=30, height=5)  
+entry_translation.place(x=550, y=80)
+
+# Start the Tkinter main loop
+window.mainloop()
